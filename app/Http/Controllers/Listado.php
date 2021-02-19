@@ -49,14 +49,22 @@ class Listado extends Controller
 
         if($request->ajax())
         {
-            $file=$request->file('file');
-            Excel::import(new ItemsImport,$file);
+            $file = $request->file('file')->store('import');
 
-          
+            try {
+                Excel::import(new ItemsImport, $file);
 
-            return back()->with('message','Importación correcta');
+                $mensaje=1;
+             }
+             catch (\Maatwebsite\Excel\Validators\ValidationException $e) {
+                $failures = $e->failures();
+                
+                $mensaje=$failures;
+             }
 
-            
+             
+
+            echo json_encode($mensaje);
         }  
     }
 }

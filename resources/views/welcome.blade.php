@@ -18,8 +18,12 @@
     <script src="http://cdn.datatables.net/1.10.23/js/jquery.dataTables.min.js"></script>
     
     <div class="row" style="padding-top:20px;padding-bottom:20px;padding-left:20px;padding-right:20px;">
-        <button class="btn btn-outline-success importardata">Importar data</button>
+        <div class="verbtn"><button class="btn btn-outline-success importardata">Importar data</button></div>
         
+        <table  class="table tablerrores">
+                <thead><tr><th>Errores</th></tr></thead>
+                <tbody class="bodyerrores"></tbody>
+            </table>
     </div>
     <div class="row" style="padding-top:20px;padding-bottom:50px;padding-left:20px;padding-right:20px;text-align:center;">
         
@@ -76,6 +80,8 @@
                 <input type="file" name="file">
 
             </form>
+            
+
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -87,9 +93,12 @@
     
   </body>
 </html>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.0.1/css/toastr.css" rel="stylesheet"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.0.1/js/toastr.js"></script>
 <script>
 $(document).ready(function(){
     listartodo();
+    $(".tablerrores").hide();
     var selec=[];
 function listartodo(est){
     $.ajax({
@@ -148,6 +157,7 @@ function listartodo(est){
     $(document.body).off("click",".importardata");
     $(document.body).on("click",".importardata",function(e){
         e.preventDefault();
+        $(".tablerrores").hide();
         $("#modalimport").modal("show");
     });
     $(document.body).off("click",".ejecutar");
@@ -158,13 +168,73 @@ function listartodo(est){
             url : "import",
             type:'post',
             data:formData,
+            dataType:'json',
             cache: false,
                 contentType: false,
                 processData: false,
             success:function(resp){
                console.log(resp);
+               if(resp==1){
+                    $("#modalimport").modal("hide");
+                    $(".importardata").prop("disabled",true);
+                    toastr.success("Importado correctamente");
+                    setTimeout(function() {
+                          
+                            location.reload();
+                        },3000);
+                    
+               }else{
+                    var mens=[];
+                let html='';
+                $.each(resp,function(i,item){
+                    m={};
+                        m.mensaje=item.errors[0]+" en la fila "+item.row;
+                        mens.push(m);
+                })
+
+                if(mens.length>0){
+                    
+                    $(".tablerrores").show();
+                    $(".importardata").prop("disabled",true);
+                    setTimeout(function() {
+                            $(".tablerrores").hide();
+                            location.reload();
+                        },10000);
+                    
+                }
+                
+                $.each(mens,function(i,item){
+                        html+='<tr>';
+                        html+='<td style="color:red;">'+item.mensaje+'</td>';
+                        html+='</tr>';
+                })
+
+                $("#modalimport").modal("hide");
+
+                $(".bodyerrores").html(html);
+               }
+               
             }
         })
     });
+
+    
+toastr.options = {
+  "closeButton": false,
+  "debug": false,
+  "newestOnTop": false,
+  "progressBar": false,
+  "positionClass": "toast-top-right",
+  "preventDuplicates": false,
+  "onclick": null,
+  "showDuration": "300",
+  "hideDuration": "1000",
+  "timeOut": "5000",
+  "extendedTimeOut": "1000",
+  "showEasing": "swing",
+  "hideEasing": "linear",
+  "showMethod": "fadeIn",
+  "hideMethod": "fadeOut"
+}
 });
 </script>
